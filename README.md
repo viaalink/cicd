@@ -8,7 +8,7 @@ Three things during a CI/CD job, published through your own Viaalink Relay:
 
 Start a terminal from your laptop, open the link, and you are working inside the runner: the checked-out repository, the toolchain and the environment your pipeline sees. Useful to debug a job that only fails in CI, or to work on a machine you do not have locally. Nothing is opened on the runner itself: it connects out to your relay over SSH, and the relay serves the session under its own domain.
 
-> **The CLI command.** `uses: viaalink/cicd@v2` is the action; use it in a workflow of your own (see "In your own workflow" below). The `via ci install` command that writes it for you comes with the next Viaalink CLI release.
+> **The CLI command.** `via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with `uses: viaalink/cicd@v2` for you; `via gh terminal` and `via gh code` start a session from your laptop. You can also use the action in a workflow of your own (see "In your own workflow" below).
 
 ## Quick start
 
@@ -110,7 +110,20 @@ jobs:
           tunnel-name: debug-${{ github.run_id }}
 ```
 
-For VS Code in the browser, add `interface: codeserver`.
+For VS Code in the browser, add `interface: codeserver` (from your laptop: `via gh code`).
+
+VS Code keeps a password of its own behind the login: after you sign in on the address, VS Code asks once more. An editor with a terminal on your runner is sensitive, so it stays locked even if the login in front is ever switched off. By default that second password is the login password again. To give VS Code a different one, pass it as `codeserver-password`:
+
+```yaml
+      - uses: viaalink/cicd@v2
+        with:
+          # ...the relay secrets, as above
+          interface: codeserver
+          password: ${{ secrets.VIA_TERMINAL_PASSWORD }}              # the login on the address
+          codeserver-password: ${{ secrets.VIA_CODESERVER_PASSWORD }} # what VS Code itself asks for
+```
+
+`VIA_CODESERVER_PASSWORD` is a name of your choosing; store it with `gh secret set VIA_CODESERVER_PASSWORD`. An empty input (also a secret that does not exist) means the login password. The run's summary says which of the two VS Code asks for, never the value.
 
 `deployments: write` lets the action add a "View deployment" button to the run; without it the session still works.
 
@@ -281,7 +294,8 @@ That is why the handler must verify every webhook itself (Mollie: fetch the paym
 
 | What | How |
 |------|-----|
-| Start a session | `via gh terminal` |
+| Start a terminal session | `via gh terminal` |
+| Start a VS Code session | `via gh code` |
 | See the sessions that are running | `via gh active` |
 | Stop a session | `via gh stop` (asks which when more than one runs), or `via gh stop <run-id>` |
 | See recent runs | `via gh runs` |
@@ -317,6 +331,7 @@ The session works the same on self-hosted runners: choose `self-hosted` as the o
 - **Whoever can open the terminal can read the relay key on the runner.** The tunnel runs on the runner with that key. That is why the key belongs to a device enrolled for CI alone: if it leaks, remove that device from the relay.
 - Anyone who can start the workflow can open a session with the repository's secrets in reach. Keep `workflow_dispatch` workflows that use this action to people you would give that access.
 - The session is behind a login (basic auth) and served over HTTPS by your relay. The output `url` embeds the login, for one-click access: treat it like a password. The password, its URL-encoded forms and the `url` output are masked in the logs, and the relay host and key id are not printed.
+- VS Code (`interface: codeserver`) asks for a password of its own after that login: the login password again, or the one you pass as `codeserver-password`. It is masked in the logs like the login password.
 - Exposed services are behind the same login unless you mark them `public`. A `public` address is protected only by its random part: anyone who has it (the run's log and summary list it) can call the service until the job ends. Expose only what is meant to be called from outside, and verify what comes in (see the webhook section). The address is not a secret the action hides, and the action adds no signature checks of its own.
 - The service on the port answers whoever reaches the address: the action publishes it as it is. Debug endpoints, admin pages or test data of the app are reachable too.
 - The relay's host key is pinned (`VIA_TUNNEL_HOST_KEY_FINGERPRINTS`): the runner refuses a relay that does not present it.
@@ -331,6 +346,7 @@ The session works the same on self-hosted runners: choose `self-hosted` as the o
 | `tunnel-port` | Relay SSH port (`VIA_TUNNEL_PORT`) | 2222 |
 | `tunnel-host-key-fingerprints` | Relay host key fingerprints (`VIA_TUNNEL_HOST_KEY_FINGERPRINTS`) | required |
 | `password` | Login password (`VIA_TERMINAL_PASSWORD`); needed for the terminal, VS Code and every service without `public` | empty |
+| `codeserver-password` | `interface: codeserver`: the password VS Code itself asks for after the login. Empty: the login password | empty |
 | `username` | Login username (letters, digits, `.`, `_`, `-`) | `via` |
 | `interface` | `terminal` (ttyd), `codeserver` (VS Code) or `none` (services only) | `terminal` |
 | `expose` | Services to publish, one per line: `<port> <name> [login\|public]` (see [Expose services during a job](#expose-services-during-a-job)) | empty |

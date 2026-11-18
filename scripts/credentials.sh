@@ -27,6 +27,8 @@ if [ -n "${INPUT_PASSWORD:-}" ]; then
   ci_mask "$ENC_PASS"
   ci_mask "$ENC_PASS_JS"
 fi
+# VS Code's own password (codeserver-password): never in a URL, masked as it is.
+ci_mask "${INPUT_CODESERVER_PASSWORD:-}"
 
 # --- Required secrets ------------------------------------------------------
 missing=""
@@ -203,6 +205,22 @@ if [ -n "${INPUT_PASSWORD:-}" ]; then
   esac
   if [[ "$INPUT_PASSWORD" =~ ^[[:space:]]*$ ]]; then
     ci_error "The password is only whitespace. Store another one (via gh setup)."
+    exit 1
+  fi
+fi
+
+# VS Code's own password, when one is given: the same two checks. It is used
+# with interface: codeserver only; a workflow that passes it for every
+# interface (one workflow, the interface as an input) is not refused.
+if [ -n "${INPUT_CODESERVER_PASSWORD:-}" ]; then
+  case "$INPUT_CODESERVER_PASSWORD" in
+    *$'\n'*|*$'\r'*)
+      ci_error "The VS Code password (codeserver-password) holds a line break, which a .env value cannot. Store another one."
+      exit 1
+      ;;
+  esac
+  if [[ "$INPUT_CODESERVER_PASSWORD" =~ ^[[:space:]]*$ ]]; then
+    ci_error "The VS Code password (codeserver-password) is only whitespace. Store another one, or leave the input empty to use the login password."
     exit 1
   fi
 fi

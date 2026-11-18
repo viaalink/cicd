@@ -17,6 +17,8 @@ jobs:
         run: bash tests/cancel.sh
       - name: Expose services (stub CLI)
         run: bash tests/expose.sh
+      - name: VS Code's own password (stub CLI)
+        run: bash tests/codeserver-password.sh
       - name: Post-step helper parses
         run: node --check post/main.js && node --check post/post.js
       - name: Validate action.yml

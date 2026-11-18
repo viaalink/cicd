@@ -41,6 +41,11 @@ inputs:
     required: false
     default: ''
 
+  codeserver-password:
+    description: "interface codeserver: the password VS Code itself asks for, after the login. Empty (the default): the login password. Not used by the other interfaces."
+    required: false
+    default: ''
+
   interface:
     description: 'terminal (ttyd, a web terminal), codeserver (VS Code in the browser) or none (only the services in expose)'
     default: 'terminal'
@@ -110,6 +115,7 @@ runs:
         INPUT_TUNNEL_PORT: ${{ inputs.tunnel-port }}
         INPUT_HOST_KEY_FINGERPRINTS: ${{ inputs.tunnel-host-key-fingerprints }}
         INPUT_PASSWORD: ${{ inputs.password }}
+        INPUT_CODESERVER_PASSWORD: ${{ inputs.codeserver-password }}
         INPUT_USERNAME: ${{ inputs.username }}
         INPUT_SHELL: ${{ inputs.shell }}
         INPUT_INTERFACE: ${{ inputs.interface }}
@@ -201,8 +207,10 @@ runs:
         VIA_TTYD_USERNAME: ${{ inputs.username }}
         VIA_TTYD_PASSWORD: ${{ inputs.password || steps.credentials.outputs.generated_password }}
         VIA_TTYD_SHELL_CMD: ${{ inputs.shell }}
+        # VS Code's own password: codeserver-password, else the login password.
+        SESSION_CODESERVER_PASSWORD: ${{ inputs.codeserver-password }}
         VIA_CODESERVER_AUTH: password
-        VIA_CODESERVER_PASSWORD: ${{ inputs.password || steps.credentials.outputs.generated_password }}
+        VIA_CODESERVER_PASSWORD: ${{ inputs.codeserver-password || inputs.password || steps.credentials.outputs.generated_password }}
         VIA_NON_INTERACTIVE: '1'
         VIA_WORKSPACE_DIR: ${{ steps.credentials.outputs.project_dir || github.workspace }}/workspace
 
@@ -225,6 +233,8 @@ runs:
         SESSION_TIMEOUT_MINUTES: ${{ steps.credentials.outputs.timeout_minutes }}
         SESSION_MODE: ${{ steps.credentials.outputs.mode }}
         SESSION_TARGET: ${{ steps.interface.outputs.target }}
+        # 'true' when VS Code has a password of its own (never the value).
+        SESSION_CODESERVER_OWN_PASSWORD: ${{ inputs.codeserver-password != '' }}
         # The relay key, host key pins and login as VIA_* step env (the CLI
         # reads the VIA_* names from 3.2.0 on; credentials.sh refuses older).
         VIA_TUNNEL_KEY: ${{ inputs.tunnel-key }}

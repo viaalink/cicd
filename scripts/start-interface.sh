@@ -68,7 +68,9 @@ note_caddy_before
   fi
   if [ "$SESSION_INTERFACE" = "codeserver" ]; then
     echo "ASD_CODESERVER_AUTH=password"
-    echo "ASD_CODESERVER_PASSWORD=$(envq "$SESSION_PASSWORD")"
+    # VS Code asks for a password of its own after the login in front: the
+    # codeserver-password input, else the login password again.
+    echo "ASD_CODESERVER_PASSWORD=$(envq "${SESSION_CODESERVER_PASSWORD:-$SESSION_PASSWORD}")"
   fi
 } >> .env
 chmod 600 .env

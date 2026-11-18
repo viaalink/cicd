@@ -3,7 +3,7 @@ name: Self-test
 # Runs this action from the current checkout. Needs the secrets `via gh setup`
 # stores: VIA_TUNNEL_KEY, VIA_TUNNEL_KEY_ID, VIA_TUNNEL_HOST,
 # VIA_TUNNEL_HOST_KEY_FINGERPRINTS, VIA_TERMINAL_PASSWORD and (optional)
-# VIA_TUNNEL_PORT.
+# VIA_TUNNEL_PORT; VIA_CODESERVER_PASSWORD (optional) is VS Code's own password.
 
 on:
   workflow_dispatch:
@@ -62,6 +62,8 @@ jobs:
           tunnel-port: ${{ secrets.VIA_TUNNEL_PORT }}
           tunnel-host-key-fingerprints: ${{ secrets.VIA_TUNNEL_HOST_KEY_FINGERPRINTS }}
           password: ${{ secrets.VIA_TERMINAL_PASSWORD }}
+          # Optional: VS Code's own password. Empty (no such secret): the login password.
+          codeserver-password: ${{ secrets.VIA_CODESERVER_PASSWORD }}
           interface: ${{ inputs.interface }}
           shell: ${{ inputs.shell }}
           username: ${{ inputs.username }}

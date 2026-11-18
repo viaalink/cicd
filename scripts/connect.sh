@@ -78,10 +78,19 @@ if [ "${SESSION_MODE:-interactive}" = "background" ]; then
 elif [ "$((10#${SESSION_TIMEOUT_MINUTES:-0}))" -gt 0 ]; then
   LIMIT="for up to $((10#${SESSION_TIMEOUT_MINUTES})) minutes"
 fi
+# VS Code keeps a password of its own behind the login: say which one it asks for.
+SECOND=""
+if [ "$SESSION_INTERFACE" = "codeserver" ]; then
+  if [ "${SESSION_CODESERVER_OWN_PASSWORD:-false}" = "true" ]; then
+    SECOND=$'\n\nVS Code then asks for its own password: the one passed as `codeserver-password`.'
+  else
+    SECOND=$'\n\nVS Code then asks for a password of its own: the login password again.'
+  fi
+fi
 ci_set_summary "$(cat << EOF2
 ## ${SESSION_LABEL:-Session} ready
 
-**[${URL}](${URL})** (sign in as \`${VIA_BASIC_AUTH_USERNAME}\`)
+**[${URL}](${URL})** (sign in as \`${VIA_BASIC_AUTH_USERNAME}\`)${SECOND}
 
 Open ${LIMIT}. ${ENDS}
 EOF2

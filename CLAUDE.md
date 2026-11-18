@@ -21,6 +21,7 @@ SPEC → EXECUTE → EVAL → TRACE → GATE → COMMIT → LEARN
 | Static | Shell scripts are valid | ShellCheck (CI workflow) |
 | Cancel | Session really ends on cancel / kill | `bash tests/cancel.sh` (stub CLI, CI workflow) |
 | Expose | Input checks, no injection, outputs, teardown | `bash tests/expose.sh` (stub CLI, CI workflow) |
+| VS Code password | `codeserver-password`: checks, mask, .env and CLI env, summary | `bash tests/codeserver-password.sh` (stub CLI, CI workflow) |
 | E2E | Real relay: webhook in, login 401/200, 404 after | test branch on `kwuite/via-ci-demo` (`uses: viaalink/ci-terminal@<branch>`) |
 | Self-test | Action works end-to-end | `.github/workflows/self-test.yml` (needs the VIA_* secrets) |
 | CI | Nothing broke upstream | `gh run list` |
@@ -58,7 +59,8 @@ SPEC → EXECUTE → EVAL → TRACE → GATE → COMMIT → LEARN
 ├── post/                              # Internal helper action (node24): its post step runs cleanup.sh at job end
 ├── tests/
 │   ├── cancel.sh                      # Cancel / kill / cleanup against a stub CLI
-│   └── expose.sh                      # expose input validation, injection, outputs, teardown (stub CLI)
+│   ├── expose.sh                      # expose input validation, injection, outputs, teardown (stub CLI)
+│   └── codeserver-password.sh         # VS Code's own password: checks, mask, .env, summary (stub CLI)
 ├── .github/workflows/
 │   ├── ci.yml                         # CI pipeline (shellcheck, action.yml parses)
 │   ├── self-test.yml                  # Self-test workflow (VIA_* secrets)
@@ -103,6 +105,9 @@ started, published or stopped goes here first, then the CLI wrapper follows.
    CLI's config dir (relay registry) follows it.
 3. Seeds the login into `.env` (escaped), `via init --yes`, then
    `via ttyd start` or `via codeserver start`. The login is also step env.
+   VS Code keeps its own password behind the login (`ASD_CODESERVER_AUTH=password`):
+   the `codeserver-password` input, else the login password again. It is
+   checked and masked like the login password and never part of a URL.
 4. `via expose ttyd <name>` (socket, Linux/macOS) or `via expose <port> <name>`
    (Windows, code-server); the URL is read back from `via expose list --json`.
    Then `expose.sh`: `via expose <port> <published> --auth=basic|none` per
@@ -166,7 +171,7 @@ started, published or stopped goes here first, then the CLI wrapper follows.
     #   8080 webhooks public
 ```
 
-`viaalink/cicd@v2` and `via ci install` are the target and become available with the v2 release (repo rename to `viaalink/cicd` + v2 tag + CLI release). Until then the CLI command is `via devinci install`, which installs the self-contained workflow.
+`via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with this step; `via gh terminal` and `via gh code` start it.
 
 ## Related
 
