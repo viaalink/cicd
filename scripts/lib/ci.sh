@@ -142,6 +142,15 @@ ci_warning() {
   esac
 }
 
+# A notice: on GitHub an annotation on the run's page (title in $1), elsewhere a log line.
+ci_notice() {
+  local title="$1" msg="$2"
+  case "$CI_PLATFORM" in
+    github)  echo "::notice title=${title}::${msg}" ;;
+    *)       printf '%s: %s\n' "$title" "$msg" ;;
+  esac
+}
+
 # ---------------------------------------------------------------------------
 # Secret masking
 # ---------------------------------------------------------------------------

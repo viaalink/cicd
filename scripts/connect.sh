@@ -97,14 +97,20 @@ ci_set_output "deploy_id" "${DEPLOY_ID:-}"
 # The post step (background mode) has no step output to read it from.
 if [ -n "${DEPLOY_ID:-}" ]; then echo "$DEPLOY_ID" > "${STATE_DIR}/deploy-id"; fi
 
-# GitHub replaces every secret's value in a run summary with ***. The relay's
-# host name is stored as a secret (via gh setup), so the address below is
-# shown as https://<name>.*** and its link leads nowhere. The deployment
-# holds the address as it is: say where to find it.
+# Where someone who started the run from GitHub's Actions page finds the
+# address while the session is open. Not in the run summary: GitHub shows a
+# job's summary only when the job has ended, and replaces every secret's
+# value in it (and in this log) with ***; the relay's host name is stored as
+# a secret (via gh setup), so the address reads https://<name>.*** there.
+# The deployment holds the address as it is, on the repository's Deployments
+# page; a github.com link is not hidden, so the notice and the log name it.
 if [ -n "${DEPLOY_ID:-}" ]; then
-  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret, and the link does not work then. Use the **View deployment** button on this page: it opens the same address."
+  DEPLOYMENTS_PAGE="${GITHUB_SERVER_URL:-https://github.com}/${CI_REPO}/deployments/via-cicd"
+  ci_notice "${SESSION_LABEL} ready" "Open it from ${DEPLOYMENTS_PAGE} (the address is the link of the active deployment) and sign in as ${VIA_BASIC_AUTH_USERNAME}. Cancel the run to end it."
+  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret. While the session is open, the address is on the repository's [Deployments page](${DEPLOYMENTS_PAGE})."
 else
-  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret, and the link does not work then. Give the job \`deployments: write\` for a **View deployment** button with the address, or run \`via gh active\` on your own device."
+  ci_notice "${SESSION_LABEL} ready" "Run via gh active on your own device for the address, or give the job deployments: write and find it on the repository's Deployments page. Sign in as ${VIA_BASIC_AUTH_USERNAME}."
+  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret. Run \`via gh active\` on your own device for the address, or give the job \`deployments: write\`: the address is then on the repository's Deployments page while the session is open."
 fi
 ci_set_summary "$(cat << EOF2
 ## ${SESSION_LABEL:-Session} ready
