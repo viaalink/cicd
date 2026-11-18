@@ -147,7 +147,7 @@ and read them in the workflow, with the secret as a fallback:
           tunnel-port: ${{ vars.VIA_TUNNEL_PORT || secrets.VIA_TUNNEL_PORT }}
 ```
 
-Then delete the two secrets (`gh secret delete VIA_TUNNEL_HOST --repo <owner>/<repo>`, and `VIA_TUNNEL_PORT`): GitHub keeps hiding a secret's value for as long as the secret exists. The key, its id, the host key fingerprints and the password stay secrets.
+Then delete the two secrets (`gh secret delete VIA_TUNNEL_HOST --repo <owner>/<repo>`, and `VIA_TUNNEL_PORT`): with the secret still named in the workflow, GitHub keeps hiding its value for as long as it exists. The key, its id, the host key fingerprints and the password stay secrets.
 
 ## Expose services during a job
 
