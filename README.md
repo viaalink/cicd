@@ -8,7 +8,7 @@ Three things during a CI/CD job, published through your own Viaalink Relay:
 
 Start a terminal from your laptop, open the link, and you are working inside the runner: the checked-out repository, the toolchain and the environment your pipeline sees. Useful to debug a job that only fails in CI, or to work on a machine you do not have locally. Nothing is opened on the runner itself: it connects out to your relay over SSH, and the relay serves the session under its own domain.
 
-> **The CLI command.** `via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with `uses: viaalink/cicd@v2` for you; `via gh terminal` and `via gh code` start a session from your laptop. You can also use the action in a workflow of your own (see "In your own workflow" below).
+> **The CLI command.** `via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with `uses: viaalink/cicd@v2` for you, and `via gh terminal` starts a session from your laptop. You can also use the action in a workflow of your own (see "In your own workflow" below).
 
 ## Quick start
 
@@ -110,7 +110,7 @@ jobs:
           tunnel-name: debug-${{ github.run_id }}
 ```
 
-For VS Code in the browser, add `interface: codeserver` (from your laptop: `via gh code`).
+For VS Code in the browser, add `interface: codeserver` (from your laptop: `via gh terminal --interface codeserver`).
 
 VS Code keeps a password of its own behind the login: after you sign in on the address, VS Code asks once more. An editor with a terminal on your runner is sensitive, so it stays locked even if the login in front is ever switched off. By default that second password is the login password again. To give VS Code a different one, pass it as `codeserver-password`:
 
@@ -295,7 +295,7 @@ That is why the handler must verify every webhook itself (Mollie: fetch the paym
 | What | How |
 |------|-----|
 | Start a terminal session | `via gh terminal` |
-| Start a VS Code session | `via gh code` |
+| Start a VS Code session | `via gh terminal --interface codeserver` |
 | See the sessions that are running | `via gh active` |
 | Stop a session | `via gh stop` (asks which when more than one runs), or `via gh stop <run-id>` |
 | See recent runs | `via gh runs` |

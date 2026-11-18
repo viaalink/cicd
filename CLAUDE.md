@@ -171,7 +171,7 @@ started, published or stopped goes here first, then the CLI wrapper follows.
     #   8080 webhooks public
 ```
 
-`via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with this step; `via gh terminal` and `via gh code` start it.
+`via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with this step; `via gh terminal` starts it (VS Code: `--interface codeserver`; the CLI's develop branch has `via gh code` for that, not released yet: update the README with that CLI release).
 
 ## Related
 
