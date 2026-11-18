@@ -98,23 +98,25 @@ ci_set_output "deploy_id" "${DEPLOY_ID:-}"
 if [ -n "${DEPLOY_ID:-}" ]; then echo "$DEPLOY_ID" > "${STATE_DIR}/deploy-id"; fi
 
 # Where someone who started the run from GitHub's Actions page finds the
-# address while the session is open. Not on the run's page: GitHub shows a
-# job's summary and its notices only when the job has ended, and replaces
-# every secret's value in them (and in this log) with ***; the relay's host
-# name is stored as a secret (via gh setup), so the address reads
-# https://<name>.*** there. The deployment holds the address as it is, on the
-# repository's Deployments page; a github.com link is not hidden, so the log
-# (here and in the keep-alive step) names that page.
+# address while the session is open. The run's page itself has nothing then:
+# GitHub shows a job's summary and its notices only when the job has ended.
+# What is open is this log, so the keep-alive step prints the address there.
+# One catch: GitHub replaces every secret's value in a log with ***. A relay
+# host name stored as a secret (what via gh setup did up to CLI 4.0) turns
+# the address into https://<name>.***, so the log also names the place that
+# has it in full: the deployment, on the repository's Deployments page (a
+# github.com link is not hidden).
+ADDRESS_LINE="Address: ${URL} (sign in as ${VIA_BASIC_AUTH_USERNAME})"
 if [ -n "${DEPLOY_ID:-}" ]; then
   DEPLOYMENTS_PAGE="${GITHUB_SERVER_URL:-https://github.com}/${CI_REPO}/deployments/via-cicd"
-  OPEN_FROM="Open it from ${DEPLOYMENTS_PAGE} (the active deployment links to the address) and sign in as ${VIA_BASIC_AUTH_USERNAME}."
-  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret. While a session is open, its address is on the repository's [Deployments page](${DEPLOYMENTS_PAGE})."
+  OPEN_FROM="Does it show ***? Your relay's host name is stored as a secret, and GitHub hides secrets here. Open the session from ${DEPLOYMENTS_PAGE} (the active deployment links to the address)."
+  HIDDEN="Does the address show \`***\`? Your relay's host name is stored as a secret, and GitHub hides secrets here. While a session is open, its address is on the repository's [Deployments page](${DEPLOYMENTS_PAGE}). Store the host name as a repository variable to see it here (the README says how)."
 else
-  OPEN_FROM="For the address, run via gh active on your own device, or give the job deployments: write: the address is then on the repository's Deployments page. Sign in as ${VIA_BASIC_AUTH_USERNAME}."
-  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret. Run \`via gh active\` on your own device for the address, or give the job \`deployments: write\`: the address is then on the repository's Deployments page while a session is open."
+  OPEN_FROM="Does it show ***? Your relay's host name is stored as a secret, and GitHub hides secrets here. Run via gh active on your own device for the address, or store the host name as a repository variable (the README says how)."
+  HIDDEN="Does the address show \`***\`? Your relay's host name is stored as a secret, and GitHub hides secrets here. Run \`via gh active\` on your own device for the address, or store the host name as a repository variable (the README says how)."
 fi
-echo "$OPEN_FROM" > "${STATE_DIR}/open-from.txt"
-ci_notice "${SESSION_LABEL} ready" "$OPEN_FROM"
+printf '%s\n%s\n' "$ADDRESS_LINE" "$OPEN_FROM" > "${STATE_DIR}/open-from.txt"
+ci_notice "${SESSION_LABEL} ready" "${ADDRESS_LINE}. ${OPEN_FROM}"
 ci_set_summary "$(cat << EOF2
 ## ${SESSION_LABEL:-Session} ready
 

@@ -35,8 +35,8 @@ LIMIT_MIN=$((10#${SESSION_TIMEOUT_MINUTES:-0}))
 START=$(date +%s)
 
 echo "Session is up. Cancel the run to end it."
-# The address itself is hidden in this log when the relay's host name is a
-# secret: say where it is (written by connect.sh).
+# The address, and where it is in full when this log shows *** for the
+# relay's host name (written by connect.sh).
 if [ -s "${STATE_DIR:-}/open-from.txt" ]; then cat "${STATE_DIR}/open-from.txt"; fi
 while true; do
   sleep "${KEEPALIVE_INTERVAL:-60}" &

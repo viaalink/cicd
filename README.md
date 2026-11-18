@@ -129,9 +129,25 @@ VS Code keeps a password of its own behind the login: after you sign in on the a
 
 ### Start it from GitHub
 
-The workflow is an ordinary `workflow_dispatch` workflow: on the repository's **Actions** page, pick it, click **Run workflow**, fill in the form and start it. While the session is open, its address is on the repository's **Deployments** page (`https://github.com/<owner>/<repo>/deployments/via-cicd`): the active deployment links to it. The job's log names that page too. Sign in with the username from the form and the `VIA_TERMINAL_PASSWORD` password; **Cancel workflow** ends the session.
+The workflow is an ordinary `workflow_dispatch` workflow: on the repository's **Actions** page, pick it, click **Run workflow**, fill in the form and start it. Open the run and its job: when the session is up, the log ends with its address. Sign in with the username from the form and the `VIA_TERMINAL_PASSWORD` password; **Cancel workflow** ends the session.
 
-The address is not readable on the run's own page: GitHub shows a job's summary only after the job has ended, and it replaces your relay's host name with `***` in the summary and the log, because `via gh setup` stores it as a secret.
+The run's own page shows nothing while the session is open: GitHub shows a job's summary only after the job has ended.
+
+**If the address shows `***`.** GitHub replaces every secret's value in a log with `***`, also inside an address. With the relay's host name stored as a secret, the address reads `https://<name>.***`. The log then also links the repository's **Deployments** page (`https://github.com/<owner>/<repo>/deployments/via-cicd`), where the active deployment is the full address (this needs `deployments: write`). To get the address in the log itself, store the host name and port as repository variables instead; they are not secret:
+
+```bash
+gh variable set VIA_TUNNEL_HOST --repo <owner>/<repo>   # your relay's host name
+gh variable set VIA_TUNNEL_PORT --repo <owner>/<repo>   # its SSH port, when it is not 2222
+```
+
+and read them in the workflow, with the secret as a fallback:
+
+```yaml
+          tunnel-host: ${{ vars.VIA_TUNNEL_HOST || secrets.VIA_TUNNEL_HOST }}
+          tunnel-port: ${{ vars.VIA_TUNNEL_PORT || secrets.VIA_TUNNEL_PORT }}
+```
+
+Then delete the two secrets (`gh secret delete VIA_TUNNEL_HOST --repo <owner>/<repo>`, and `VIA_TUNNEL_PORT`): GitHub keeps hiding a secret's value for as long as the secret exists. The key, its id, the host key fingerprints and the password stay secrets.
 
 ## Expose services during a job
 

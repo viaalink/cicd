@@ -171,7 +171,7 @@ started, published or stopped goes here first, then the CLI wrapper follows.
     #   8080 webhooks public
 ```
 
-`via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with this step; `via gh terminal` starts it (VS Code: `--interface codeserver`; the CLI's develop branch has `via gh code` for that, not released yet: update the README with that CLI release).
+`via ci install` (Viaalink CLI 4.0.0 or later) writes a workflow with this step; `via gh terminal` starts it (VS Code: `--interface codeserver`; the CLI's develop branch has `via gh code` for that, not released yet: update the README with that CLI release). The same release makes `via gh setup` store the relay's host name and port as repository variables (cli-src PR #549): when it ships, change the README's examples to `vars.VIA_TUNNEL_HOST || secrets.VIA_TUNNEL_HOST` and say that `via gh setup` does it.
 
 ## Related
 
