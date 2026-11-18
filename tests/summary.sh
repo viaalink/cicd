@@ -99,9 +99,9 @@ check "it says Terminal ready" grep -qx '## Terminal ready' "$T1/summary"
 check "it lists the address and the user name" grep -qF '**[https://review-ci.relay.example.com/](https://review-ci.relay.example.com/)** (sign in as `via`)' "$T1/summary"
 check "it says why the address can show ***" grep -qF 'Does the address show `***`? Your relay'"'"'s host name is stored as a secret' "$T1/summary"
 check "and links the repository's Deployments page" grep -qF "its address is on the repository's [Deployments page](https://github.com/o/r/deployments/via-cicd)." "$T1/summary"
-check "the log has a notice with the address and that page" grep -qF '::notice title=Terminal ready::Address: https://review-ci.relay.example.com/ (sign in as via). Does it show ***?' "$T1/connect.log"
+check "the log has a notice with the address and that page" grep -qxF '::notice title=Terminal ready::Address: https://review-ci.relay.example.com/ (sign in as via)' "$T1/connect.log"
 check "the keep-alive step gets the address first" test "$(sed -n 1p "$T1/state/open-from.txt")" = 'Address: https://review-ci.relay.example.com/ (sign in as via)'
-check "and then where it is in full when GitHub hides it" grep -qF 'Open the session from https://github.com/o/r/deployments/via-cicd (the active deployment links to the address).' "$T1/state/open-from.txt"
+check "and then where it is in full when GitHub hides it" grep -qF 'If it shows ***: open the session from https://github.com/o/r/deployments/via-cicd (' "$T1/state/open-from.txt"
 check "the deployment holds the address as it is" grep -qF 'https://review-ci.relay.example.com/' "$T1/fake/deployment-status-call"
 check "the deployment id is a step output" grep -qx 'deploy_id=4242' "$T1/out"
 check "the password is in no log and not in the summary" bash -c '! grep -qF "p w" "$1/connect.log" "$1/summary"' _ "$T1"
@@ -111,7 +111,7 @@ T2="$(mktemp -d)"; make_stubs "$T2"
 check "connect.sh publishes" connect "$T2"
 check "the summary does not link a Deployments page that has nothing" bash -c '! grep -qF "[Deployments page](" "$1"' _ "$T2/summary"
 check "it names the command and the variable instead" grep -qF 'Run `via gh active` on your own device for the address, or store the host name as a repository variable' "$T2/summary"
-check "the keep-alive line says the same, after the address" bash -c 'sed -n 1p "$1" | grep -qF "Address: https://review-ci.relay.example.com/" && sed -n 2p "$1" | grep -qF "Run via gh active on your own device"' _ "$T2/state/open-from.txt"
+check "the keep-alive line says the same, after the address" bash -c 'sed -n 1p "$1" | grep -qF "Address: https://review-ci.relay.example.com/" && sed -n 2p "$1" | grep -qF "If it shows ***: run via gh active on your own device"' _ "$T2/state/open-from.txt"
 check "the CLI's own block is not in the summary" bash -c '! grep -q "Open the hub" "$1"' _ "$T2/summary"
 
 echo "# 3. Exposed services"
@@ -128,7 +128,7 @@ check "it says where the full addresses are" grep -qF 'Later steps get the full 
 
 echo "# 4. The keep-alive step, the one whose log is open while the session runs"
 T4="$(mktemp -d)"; make_stubs "$T4"
-printf '%s\n%s\n' "Address: https://review-ci.relay.example.com/ (sign in as via)" "Does it show ***? Open the session from https://github.com/o/r/deployments/via-cicd (the active deployment links to the address)." > "$T4/state/open-from.txt"
+printf '%s\n%s\n' "Address: https://review-ci.relay.example.com/ (sign in as via)" "If it shows ***: open the session from https://github.com/o/r/deployments/via-cicd (GitHub hides a relay host name that is stored as a secret; the active deployment there links to the address)." > "$T4/state/open-from.txt"
 set -m
 (cd "$T4/project" && exec env FAKE="$T4/fake" STATE_DIR="$T4/state" SESSION_NAME=review SESSION_INTERFACE=terminal \
   SESSION_TIMEOUT_MINUTES=0 SESSION_MODE=interactive SCRIPTS_DIR="$SCRIPTS" PATH="$T4/bin:$PATH" KEEPALIVE_INTERVAL=30 \
@@ -139,7 +139,7 @@ set +m
 for _ in $(seq 50); do grep -q "Session is up" "$T4/keepalive.log" 2>/dev/null && break; sleep 0.1; done
 sleep 0.2
 check "it prints the address" grep -qxF 'Address: https://review-ci.relay.example.com/ (sign in as via)' "$T4/keepalive.log"
-check "and where to open the session when the address is hidden" grep -qF 'Open the session from https://github.com/o/r/deployments/via-cicd' "$T4/keepalive.log"
+check "and where to open the session when the address is hidden" grep -qF 'If it shows ***: open the session from https://github.com/o/r/deployments/via-cicd' "$T4/keepalive.log"
 kill -TERM "$KA_PID" 2>/dev/null || true
 wait "$KA_PID" 2>/dev/null || true
 check "and still ends on the cancel signal" grep -q "Ending the session (cancelled)" "$T4/keepalive.log"

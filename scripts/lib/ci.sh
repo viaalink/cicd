@@ -276,7 +276,7 @@ ci_create_deployment() {
             \"environment_url\": \"${url}\",
             \"description\": \"Viaalink CI/CD session ready\"
           }" > /dev/null 2>&1 || true
-        echo "Deployment created: View deployment button now visible"
+        echo "Deployment created: the address is on the repository's Deployments page"
       else
         ci_warning "Could not create deployment (check permissions)"
         DEPLOY_ID=""

@@ -90,7 +90,7 @@ if [ "$SESSION_INTERFACE" = "codeserver" ]; then
     SECOND=$'\n\nVS Code then asks for a password of its own: the login password again.'
   fi
 fi
-# GitHub: a "View deployment" button (needs deployments: write; skipped
+# GitHub: a deployment that holds the address in full, on the repository's Deployments page (needs deployments: write; skipped
 # without it). Passed on as a step output; the cleanup marks it inactive.
 ci_create_deployment "via-cicd" "Viaalink CI/CD ${SESSION_INTERFACE} session" "${URL}"
 ci_set_output "deploy_id" "${DEPLOY_ID:-}"
@@ -109,14 +109,14 @@ if [ -n "${DEPLOY_ID:-}" ]; then echo "$DEPLOY_ID" > "${STATE_DIR}/deploy-id"; f
 ADDRESS_LINE="Address: ${URL} (sign in as ${VIA_BASIC_AUTH_USERNAME})"
 if [ -n "${DEPLOY_ID:-}" ]; then
   DEPLOYMENTS_PAGE="${GITHUB_SERVER_URL:-https://github.com}/${CI_REPO}/deployments/via-cicd"
-  OPEN_FROM="Does it show ***? Your relay's host name is stored as a secret, and GitHub hides secrets here. Open the session from ${DEPLOYMENTS_PAGE} (the active deployment links to the address)."
+  OPEN_FROM="If it shows ***: open the session from ${DEPLOYMENTS_PAGE} (GitHub hides a relay host name that is stored as a secret; the active deployment there links to the address)."
   HIDDEN="Does the address show \`***\`? Your relay's host name is stored as a secret, and GitHub hides secrets here. While a session is open, its address is on the repository's [Deployments page](${DEPLOYMENTS_PAGE}). Store the host name as a repository variable to see it here (the README says how)."
 else
-  OPEN_FROM="Does it show ***? Your relay's host name is stored as a secret, and GitHub hides secrets here. Run via gh active on your own device for the address, or store the host name as a repository variable (the README says how)."
+  OPEN_FROM="If it shows ***: run via gh active on your own device for the address (GitHub hides a relay host name that is stored as a secret; the README says how to store it as a variable)."
   HIDDEN="Does the address show \`***\`? Your relay's host name is stored as a secret, and GitHub hides secrets here. Run \`via gh active\` on your own device for the address, or store the host name as a repository variable (the README says how)."
 fi
 printf '%s\n%s\n' "$ADDRESS_LINE" "$OPEN_FROM" > "${STATE_DIR}/open-from.txt"
-ci_notice "${SESSION_LABEL} ready" "${ADDRESS_LINE}. ${OPEN_FROM}"
+ci_notice "${SESSION_LABEL} ready" "${ADDRESS_LINE}"
 ci_set_summary "$(cat << EOF2
 ## ${SESSION_LABEL:-Session} ready
 
