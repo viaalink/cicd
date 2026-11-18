@@ -62,7 +62,7 @@ There is no default relay: the session is always published through the relay who
 via gh terminal
 ```
 
-Pick the options, wait for the URL, open it and sign in with the username you chose and the `VIA_TERMINAL_PASSWORD` password. The same URL is in the run's summary and in its `tunnel-url-<session name>` artifact.
+Pick the options, wait for the URL, open it and sign in with the username you chose and the `VIA_TERMINAL_PASSWORD` password. The same URL is in the run's `tunnel-url-<session name>` artifact and behind the run's **View deployment** button.
 
 ### In your own workflow
 
@@ -125,7 +125,7 @@ VS Code keeps a password of its own behind the login: after you sign in on the a
 
 `VIA_CODESERVER_PASSWORD` is a name of your choosing; store it with `gh secret set VIA_CODESERVER_PASSWORD`. An empty input (also a secret that does not exist) means the login password. The run's summary says which of the two VS Code asks for, never the value.
 
-`deployments: write` lets the action add a "View deployment" button to the run; without it the session still works.
+`deployments: write` lets the action add a "View deployment" button to the run; without it the session still works. When you start the workflow from GitHub's Actions page, that button is how you open the session: the run's summary lists the address too, but GitHub replaces your relay's host name with `***` there when it is stored as a secret (which `via gh setup` does), and the link then leads nowhere.
 
 ## Expose services during a job
 

@@ -57,7 +57,9 @@ while IFS=$'\t' read -r port name auth published <&3; do
   # but the address does not answer yet (nothing listens on the port). Which
   # one it was is read from via expose list below, not from the exit code.
   rc=0
-  via expose "$port" "$published" "$flag" < /dev/null || rc=$?
+  # GITHUB_STEP_SUMMARY empty for the CLI: the summary is the action's to
+  # write (see connect.sh).
+  GITHUB_STEP_SUMMARY='' via expose "$port" "$published" "$flag" < /dev/null || rc=$?
   note_caddy_started
 
   # The address depends on the relay (a shared relay appends the client id,
@@ -118,6 +120,8 @@ ci_set_summary "$(cat << EOF2
 |------|------|---------|--------|
 ${SUMMARY}
 ${UNTIL} Services with a login use the action's username and password.
+
+Does an address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret. Later steps get the full addresses from the \`urls\` output and \`VIAALINK_URL_<NAME>\`.
 EOF2
 )"
 

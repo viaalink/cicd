@@ -29,7 +29,10 @@ trap on_exit EXIT
 touch "${STATE_DIR}/exposed"
 # --auth=basic: the terminal and VS Code are never published without the
 # login, whatever expose_auth or a checked-out via.yaml says.
-via expose "$SESSION_TARGET" "$SESSION_NAME" --auth=basic
+# GITHUB_STEP_SUMMARY empty for the CLI: it appends a block of its own to the
+# run summary when it publishes ("Open the hub ..."), above the action's. The
+# summary of this run is the action's to write.
+GITHUB_STEP_SUMMARY='' via expose "$SESSION_TARGET" "$SESSION_NAME" --auth=basic
 note_caddy_started
 
 # The hostname depends on the relay (a shared relay appends the client id, a
@@ -87,20 +90,31 @@ if [ "$SESSION_INTERFACE" = "codeserver" ]; then
     SECOND=$'\n\nVS Code then asks for a password of its own: the login password again.'
   fi
 fi
-ci_set_summary "$(cat << EOF2
-## ${SESSION_LABEL:-Session} ready
-
-**[${URL}](${URL})** (sign in as \`${VIA_BASIC_AUTH_USERNAME}\`)${SECOND}
-
-Open ${LIMIT}. ${ENDS}
-EOF2
-)"
-
 # GitHub: a "View deployment" button (needs deployments: write; skipped
 # without it). Passed on as a step output; the cleanup marks it inactive.
 ci_create_deployment "via-cicd" "Viaalink CI/CD ${SESSION_INTERFACE} session" "${URL}"
 ci_set_output "deploy_id" "${DEPLOY_ID:-}"
 # The post step (background mode) has no step output to read it from.
 if [ -n "${DEPLOY_ID:-}" ]; then echo "$DEPLOY_ID" > "${STATE_DIR}/deploy-id"; fi
+
+# GitHub replaces every secret's value in a run summary with ***. The relay's
+# host name is stored as a secret (via gh setup), so the address below is
+# shown as https://<name>.*** and its link leads nowhere. The deployment
+# holds the address as it is: say where to find it.
+if [ -n "${DEPLOY_ID:-}" ]; then
+  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret, and the link does not work then. Use the **View deployment** button on this page: it opens the same address."
+else
+  HIDDEN="Does the address show \`***\`? GitHub hides your relay's host name here, because it is stored as a secret, and the link does not work then. Give the job \`deployments: write\` for a **View deployment** button with the address, or run \`via gh active\` on your own device."
+fi
+ci_set_summary "$(cat << EOF2
+## ${SESSION_LABEL:-Session} ready
+
+**[${URL}](${URL})** (sign in as \`${VIA_BASIC_AUTH_USERNAME}\`)${SECOND}
+
+${HIDDEN}
+
+Open ${LIMIT}. ${ENDS}
+EOF2
+)"
 
 ci_group_end
