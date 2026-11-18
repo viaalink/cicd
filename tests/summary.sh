@@ -3,7 +3,9 @@
 # the CLI does in a GitHub job: append a block of its own ("Open the hub ...")
 # to GITHUB_STEP_SUMMARY when it publishes. The action keeps that block out,
 # and says where the address is when GitHub shows it as *** (the relay's host
-# name is a secret): the View deployment button when there is one.
+# name is a secret): the repository's Deployments page when there is a
+# deployment. GitHub shows the summary only after the job, so the log names
+# that page too (a notice, and a line for the keep-alive step).
 #
 # Run: bash tests/summary.sh   (needs bash, jq; no network, no real CLI)
 set -euo pipefail
@@ -88,7 +90,7 @@ connect() {
     bash "$SCRIPTS/connect.sh" >"$t/connect.log" 2>&1)
 }
 
-echo "# 1. With a View deployment button"
+echo "# 1. With a deployment"
 T1="$(mktemp -d)"; make_stubs "$T1"; touch "$T1/fake/deployments"
 check "connect.sh publishes" connect "$T1"
 check "the CLI's own block is not in the summary" bash -c '! grep -q -e "Open the hub" -e "Please note" "$1"' _ "$T1/summary"
@@ -96,7 +98,9 @@ check "the summary has one heading: the action's" test "$(grep -c '^#' "$T1/summ
 check "it says Terminal ready" grep -qx '## Terminal ready' "$T1/summary"
 check "it lists the address and the user name" grep -qF '**[https://review-ci.relay.example.com/](https://review-ci.relay.example.com/)** (sign in as `via`)' "$T1/summary"
 check "it says why the address can show ***" grep -qF 'Does the address show `***`? GitHub hides your relay'"'"'s host name here' "$T1/summary"
-check "and names the View deployment button" grep -qF 'Use the **View deployment** button on this page' "$T1/summary"
+check "and links the repository's Deployments page" grep -qF "its address is on the repository's [Deployments page](https://github.com/o/r/deployments/via-cicd)." "$T1/summary"
+check "the log has a notice that names that page" grep -qxF '::notice title=Terminal ready::Open it from https://github.com/o/r/deployments/via-cicd (the active deployment links to the address) and sign in as via.' "$T1/connect.log"
+check "the keep-alive step gets the same line" grep -qxF 'Open it from https://github.com/o/r/deployments/via-cicd (the active deployment links to the address) and sign in as via.' "$T1/state/open-from.txt"
 check "the deployment holds the address as it is" grep -qF 'https://review-ci.relay.example.com/' "$T1/fake/deployment-status-call"
 check "the deployment id is a step output" grep -qx 'deploy_id=4242' "$T1/out"
 check "the password is in no log and not in the summary" bash -c '! grep -qF "p w" "$1/connect.log" "$1/summary"' _ "$T1"
@@ -104,8 +108,9 @@ check "the password is in no log and not in the summary" bash -c '! grep -qF "p 
 echo "# 2. Without one (no deployments: write)"
 T2="$(mktemp -d)"; make_stubs "$T2"
 check "connect.sh publishes" connect "$T2"
-check "the summary does not point at a button that is not there" bash -c '! grep -qF "Use the **View deployment** button" "$1"' _ "$T2/summary"
-check "it names the permission and the command instead" grep -qF 'Give the job `deployments: write` for a **View deployment** button with the address, or run `via gh active` on your own device.' "$T2/summary"
+check "the summary does not link a Deployments page that has nothing" bash -c '! grep -qF "[Deployments page](" "$1"' _ "$T2/summary"
+check "it names the command and the permission instead" grep -qF 'Run `via gh active` on your own device for the address, or give the job `deployments: write`' "$T2/summary"
+check "the notice says the same" grep -qF '::notice title=Terminal ready::For the address, run via gh active on your own device' "$T2/connect.log"
 check "the CLI's own block is not in the summary" bash -c '! grep -q "Open the hub" "$1"' _ "$T2/summary"
 
 echo "# 3. Exposed services"
@@ -120,7 +125,24 @@ check "the CLI's own block is not in the summary" bash -c '! grep -q "Open the h
 check "the table lists the service" grep -qF '| `shop` | 3000 | https://shop-0123456789abcdef-ci.relay.example.com | login |' "$T3/summary"
 check "it says where the full addresses are" grep -qF 'Later steps get the full addresses from the `urls` output and `VIAALINK_URL_<NAME>`.' "$T3/summary"
 
-rm -rf "$T1" "$T2" "$T3"
+echo "# 4. The keep-alive step, the one whose log is open while the session runs"
+T4="$(mktemp -d)"; make_stubs "$T4"
+echo "Open it from https://github.com/o/r/deployments/via-cicd (the active deployment links to the address) and sign in as via." > "$T4/state/open-from.txt"
+set -m
+(cd "$T4/project" && exec env FAKE="$T4/fake" STATE_DIR="$T4/state" SESSION_NAME=review SESSION_INTERFACE=terminal \
+  SESSION_TIMEOUT_MINUTES=0 SESSION_MODE=interactive SCRIPTS_DIR="$SCRIPTS" PATH="$T4/bin:$PATH" KEEPALIVE_INTERVAL=30 \
+  GITHUB_ACTIONS=true GITHUB_TOKEN="" GITHUB_REPOSITORY=o/r GITLAB_CI="" CI_RUNNER_OS=Linux \
+  bash "$SCRIPTS/keepalive.sh" >"$T4/keepalive.log" 2>&1) &
+KA_PID=$!
+set +m
+for _ in $(seq 50); do grep -q "Session is up" "$T4/keepalive.log" 2>/dev/null && break; sleep 0.1; done
+sleep 0.2
+check "it prints where to open the session" grep -qxF 'Open it from https://github.com/o/r/deployments/via-cicd (the active deployment links to the address) and sign in as via.' "$T4/keepalive.log"
+kill -TERM "$KA_PID" 2>/dev/null || true
+wait "$KA_PID" 2>/dev/null || true
+check "and still ends on the cancel signal" grep -q "Ending the session (cancelled)" "$T4/keepalive.log"
+
+rm -rf "$T1" "$T2" "$T3" "$T4"
 if [ "$FAILS" -gt 0 ]; then
   echo "$FAILS check(s) failed"
   exit 1
