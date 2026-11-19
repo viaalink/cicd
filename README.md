@@ -73,8 +73,8 @@ Pick the options, wait for the URL, open it and sign in with the username you ch
   with:
     tunnel-key: ${{ secrets.VIA_TUNNEL_KEY }}
     tunnel-key-id: ${{ secrets.VIA_TUNNEL_KEY_ID }}
-    tunnel-host: ${{ secrets.VIA_TUNNEL_HOST }}
-    tunnel-port: ${{ secrets.VIA_TUNNEL_PORT }}
+    tunnel-host: ${{ vars.VIA_TUNNEL_HOST || secrets.VIA_TUNNEL_HOST }}
+    tunnel-port: ${{ vars.VIA_TUNNEL_PORT || secrets.VIA_TUNNEL_PORT }}
     tunnel-host-key-fingerprints: ${{ secrets.VIA_TUNNEL_HOST_KEY_FINGERPRINTS }}
     password: ${{ secrets.VIA_TERMINAL_PASSWORD }}
     tunnel-name: debug-${{ github.run_id }}
@@ -103,14 +103,14 @@ jobs:
         with:
           tunnel-key: ${{ secrets.VIA_TUNNEL_KEY }}
           tunnel-key-id: ${{ secrets.VIA_TUNNEL_KEY_ID }}
-          tunnel-host: ${{ secrets.VIA_TUNNEL_HOST }}
-          tunnel-port: ${{ secrets.VIA_TUNNEL_PORT }}
+          tunnel-host: ${{ vars.VIA_TUNNEL_HOST || secrets.VIA_TUNNEL_HOST }}
+          tunnel-port: ${{ vars.VIA_TUNNEL_PORT || secrets.VIA_TUNNEL_PORT }}
           tunnel-host-key-fingerprints: ${{ secrets.VIA_TUNNEL_HOST_KEY_FINGERPRINTS }}
           password: ${{ secrets.VIA_TERMINAL_PASSWORD }}
           tunnel-name: debug-${{ github.run_id }}
 ```
 
-For VS Code in the browser, add `interface: codeserver` (from your laptop: `via gh terminal --interface codeserver`).
+For VS Code in the browser, add `interface: codeserver` (from your laptop: `via gh code`).
 
 VS Code keeps a password of its own behind the login: after you sign in on the address, VS Code asks once more. An editor with a terminal on your runner is sensitive, so it stays locked even if the login in front is ever switched off. By default that second password is the login password again. To give VS Code a different one, pass it as `codeserver-password`:
 
@@ -133,7 +133,7 @@ The workflow is an ordinary `workflow_dispatch` workflow: on the repository's **
 
 The run's own page shows nothing while the session is open: GitHub shows a job's summary only after the job has ended.
 
-**If the address shows `***`.** GitHub replaces every secret's value in a log with `***`, also inside an address. With the relay's host name stored as a secret, the address reads `https://<name>.***`. The log then also links the repository's **Deployments** page (`https://github.com/<owner>/<repo>/deployments/via-cicd`), where the active deployment is the full address (this needs `deployments: write`). To get the address in the log itself, store the host name and port as repository variables instead; they are not secret:
+**If the address shows `***`.** GitHub replaces every secret's value in a log with `***`, also inside an address. With the relay's host name stored as a secret, the address reads `https://<name>.***`. The log then also links the repository's **Deployments** page (`https://github.com/<owner>/<repo>/deployments/via-cicd`), where the active deployment is the full address (this needs `deployments: write`). Viaalink CLI 4.1.0 and later store the host name and port as repository variables: run `via gh setup` again, push the new `terminal.yml`, and run `via gh setup` once more (it deletes the old address secrets once the workflow on GitHub reads the variables). By hand, store them as repository variables; they are not secret:
 
 ```bash
 gh variable set VIA_TUNNEL_HOST --repo <owner>/<repo>   # your relay's host name
@@ -241,8 +241,8 @@ jobs:
         with:
           tunnel-key: ${{ secrets.VIA_TUNNEL_KEY }}
           tunnel-key-id: ${{ secrets.VIA_TUNNEL_KEY_ID }}
-          tunnel-host: ${{ secrets.VIA_TUNNEL_HOST }}
-          tunnel-port: ${{ secrets.VIA_TUNNEL_PORT }}
+          tunnel-host: ${{ vars.VIA_TUNNEL_HOST || secrets.VIA_TUNNEL_HOST }}
+          tunnel-port: ${{ vars.VIA_TUNNEL_PORT || secrets.VIA_TUNNEL_PORT }}
           tunnel-host-key-fingerprints: ${{ secrets.VIA_TUNNEL_HOST_KEY_FINGERPRINTS }}
           interface: none
           mode: background
@@ -284,8 +284,8 @@ Adyen supports basic authentication on its webhooks, so keep the endpoint behind
         with:
           tunnel-key: ${{ secrets.VIA_TUNNEL_KEY }}
           tunnel-key-id: ${{ secrets.VIA_TUNNEL_KEY_ID }}
-          tunnel-host: ${{ secrets.VIA_TUNNEL_HOST }}
-          tunnel-port: ${{ secrets.VIA_TUNNEL_PORT }}
+          tunnel-host: ${{ vars.VIA_TUNNEL_HOST || secrets.VIA_TUNNEL_HOST }}
+          tunnel-port: ${{ vars.VIA_TUNNEL_PORT || secrets.VIA_TUNNEL_PORT }}
           tunnel-host-key-fingerprints: ${{ secrets.VIA_TUNNEL_HOST_KEY_FINGERPRINTS }}
           interface: none          # no terminal: the login is Adyen's alone
           mode: background
@@ -317,7 +317,7 @@ That is why the handler must verify every webhook itself (Mollie: fetch the paym
 | What | How |
 |------|-----|
 | Start a terminal session | `via gh terminal` |
-| Start a VS Code session | `via gh terminal --interface codeserver` |
+| Start a VS Code session | `via gh code` |
 | See the sessions that are running | `via gh active` |
 | Stop a session | `via gh stop` (asks which when more than one runs), or `via gh stop <run-id>` |
 | See recent runs | `via gh runs` |
